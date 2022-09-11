@@ -87,11 +87,11 @@ public final class SimpleCollection extends org.freedesktop.secret.simple.interf
                 try {
                     encrypted = transport.encrypt(password);
                 } catch (NoSuchAlgorithmException |
-                        NoSuchPaddingException |
-                        InvalidAlgorithmParameterException |
-                        InvalidKeyException |
-                        BadPaddingException |
-                        IllegalBlockSizeException e) {
+                         NoSuchPaddingException |
+                         InvalidAlgorithmParameterException |
+                         InvalidKeyException |
+                         BadPaddingException |
+                         IllegalBlockSizeException e) {
                     log.error("Could not establish transport encryption.", e);
                 }
             }
@@ -258,10 +258,10 @@ public final class SimpleCollection extends org.freedesktop.secret.simple.interf
             prompt = new Prompt(service);
             withoutPrompt = new InternalUnsupportedGuiltRiddenInterface(service);
         } catch (NoSuchAlgorithmException |
-                InvalidAlgorithmParameterException |
-                InvalidKeySpecException |
-                InvalidKeyException |
-                DBusException e) {
+                 InvalidAlgorithmParameterException |
+                 InvalidKeySpecException |
+                 InvalidKeyException |
+                 DBusException e) {
             throw new IOException("Cloud not initiate transport encryption.", e);
         }
     }
@@ -330,7 +330,7 @@ public final class SimpleCollection extends org.freedesktop.secret.simple.interf
     public void lock() {
         if (collection != null && !collection.isLocked()) {
             service.lock(lockable());
-            log.info("Locked collection: " + collection.getLabel() + " (" + collection.getObjectPath() + ")");
+            log.info("Locked collection: \"" + collection.getLabel().get() + "\" (" + collection.getObjectPath() + ")");
             try {
                 Thread.currentThread().sleep(DEFAULT_DELAY_MILLIS);
             } catch (InterruptedException e) {
@@ -346,11 +346,11 @@ public final class SimpleCollection extends org.freedesktop.secret.simple.interf
                 performPrompt(response.b);
                 if (!collection.isLocked()) {
                     isUnlockedOnceWithUserPermission = true;
-                    log.info("Unlocked collection: " + collection.getLabel() + " (" + collection.getObjectPath() + ")");
+                    log.info("Unlocked collection: \"" + collection.getLabel().get() + "\" (" + collection.getObjectPath() + ")");
                 }
             } else {
                 withoutPrompt.unlockWithMasterPassword(collection.getPath(), encrypted);
-                log.debug("Unlocked collection: " + collection.getLabel() + " (" + collection.getObjectPath() + ")");
+                log.debug("Unlocked collection: \"" + collection.getLabel().get() + "\" (" + collection.getObjectPath() + ")");
             }
         }
     }
@@ -455,11 +455,11 @@ public final class SimpleCollection extends org.freedesktop.secret.simple.interf
                 }
             }
         } catch (NoSuchAlgorithmException |
-                NoSuchPaddingException |
-                InvalidAlgorithmParameterException |
-                InvalidKeyException |
-                BadPaddingException |
-                IllegalBlockSizeException e) {
+                 NoSuchPaddingException |
+                 InvalidAlgorithmParameterException |
+                 InvalidKeyException |
+                 BadPaddingException |
+                 IllegalBlockSizeException e) {
             log.error("Cloud not encrypt the secret.", e);
         }
 
@@ -514,11 +514,11 @@ public final class SimpleCollection extends org.freedesktop.secret.simple.interf
         if (password != null) try (Secret secret = transport.encrypt(password)) {
             item.setSecret(secret);
         } catch (NoSuchAlgorithmException |
-                NoSuchPaddingException |
-                InvalidAlgorithmParameterException |
-                InvalidKeyException |
-                BadPaddingException |
-                IllegalBlockSizeException e) {
+                 NoSuchPaddingException |
+                 InvalidAlgorithmParameterException |
+                 InvalidKeyException |
+                 BadPaddingException |
+                 IllegalBlockSizeException e) {
             log.error("Cloud not encrypt the secret.", e);
         }
     }
@@ -586,15 +586,14 @@ public final class SimpleCollection extends org.freedesktop.secret.simple.interf
 
         char[] decrypted = null;
         ObjectPath sessionPath = session.getPath();
-        log.info(sessionPath.getPath());
         try (final Secret secret = item.getSecret(sessionPath).orElseGet(() -> new Secret(sessionPath, null))) {
             decrypted = transport.decrypt(secret);
         } catch (NoSuchPaddingException |
-                NoSuchAlgorithmException |
-                InvalidAlgorithmParameterException |
-                InvalidKeyException |
-                BadPaddingException |
-                IllegalBlockSizeException e) {
+                 NoSuchAlgorithmException |
+                 InvalidAlgorithmParameterException |
+                 InvalidKeyException |
+                 BadPaddingException |
+                 IllegalBlockSizeException e) {
             log.error("Could not decrypt the secret.", e);
         }
         return decrypted;
