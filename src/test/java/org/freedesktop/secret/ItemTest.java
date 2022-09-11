@@ -15,6 +15,7 @@ import java.util.Map;
 
 import static org.freedesktop.secret.test.Context.label;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ItemTest {
 
@@ -164,7 +165,8 @@ public class ItemTest {
 
     @Test
     public void setLabel() {
-        context.item.setLabel("RelabeledItem");
+        boolean result = context.item.setLabel("RelabeledItem");
+        assertTrue(result);
         String label = context.item.getLabel().get();
         log.info(label("label", label));
         assertEquals("RelabeledItem", label);
