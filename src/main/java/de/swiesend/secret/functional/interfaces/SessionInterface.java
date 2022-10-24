@@ -1,4 +1,6 @@
-package org.freedesktop.secret.simple.interfaces;
+package de.swiesend.secret.functional.interfaces;
+
+import de.swiesend.secret.functional.interfaces.CollectionInterface;
 
 import java.util.Optional;
 

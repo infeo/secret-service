@@ -1,4 +1,4 @@
-package org.freedesktop.secret.simple.interfaces;
+package de.swiesend.secret.functional.interfaces;
 
 import java.util.List;
 import java.util.Map;

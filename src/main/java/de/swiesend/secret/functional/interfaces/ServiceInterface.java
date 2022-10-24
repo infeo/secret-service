@@ -1,10 +1,11 @@
-package org.freedesktop.secret.simple.interfaces;
+package de.swiesend.secret.functional.interfaces;
 
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 
 public abstract class ServiceInterface implements AutoCloseable {
@@ -43,7 +44,9 @@ public abstract class ServiceInterface implements AutoCloseable {
 
     public abstract boolean clear();
 
-    public abstract Optional<SessionInterface> getSession();
+    public abstract Optional<List<SessionInterface>> sessions();
+
+    public abstract Optional<SystemInterface> system();
 
     public abstract Duration getTimeout();
 
