@@ -1,5 +1,6 @@
 package de.swiesend.secret.functional.interfaces;
 
+import de.swiesend.secret.functional.Session;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,14 +43,22 @@ public abstract class ServiceInterface implements AutoCloseable {
         return Optional.empty();
     }
 
-    public abstract boolean clear();
+    abstract public boolean clear();
 
-    public abstract Optional<List<SessionInterface>> sessions();
+    abstract public Optional<Session> openSession();
 
-    public abstract Optional<SystemInterface> system();
+    abstract public List<SessionInterface> getSessions();
 
-    public abstract Duration getTimeout();
+    abstract public void registerSession(Session session);
 
-    public abstract void setTimeout(Duration timeout);
+    abstract public void unregisterSession(Session session);
+
+    abstract public Duration getTimeout();
+
+    abstract public void setTimeout(Duration timeout);
+
+    abstract public org.freedesktop.secret.Service getService();
+
+    abstract public boolean isOrgGnomeKeyringAvailable();
 
 }

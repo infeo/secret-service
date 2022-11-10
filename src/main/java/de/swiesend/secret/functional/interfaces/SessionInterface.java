@@ -1,6 +1,6 @@
 package de.swiesend.secret.functional.interfaces;
 
-import de.swiesend.secret.functional.interfaces.CollectionInterface;
+import org.freedesktop.secret.TransportEncryption;
 
 import java.util.Optional;
 
@@ -11,5 +11,11 @@ public interface SessionInterface extends AutoCloseable {
     Optional<CollectionInterface> collection(String label, CharSequence password);
 
     Optional<CollectionInterface> defaultCollection();
+
+    TransportEncryption.EncryptedSession getEncryptedSession();
+
+    ServiceInterface getService();
+
+    org.freedesktop.secret.Session getSession();
 
 }
