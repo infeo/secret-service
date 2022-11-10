@@ -7,6 +7,7 @@ import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.interfaces.DBus;
 import org.freedesktop.dbus.types.Variant;
+import org.freedesktop.secret.Collection;
 import org.freedesktop.secret.*;
 import org.freedesktop.secret.interfaces.Prompt.Completed;
 import org.gnome.keyring.InternalUnsupportedGuiltRiddenInterface;
@@ -21,12 +22,8 @@ import java.security.AccessControlException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.RejectedExecutionException;
 
 import static org.freedesktop.secret.Static.DBus.DEFAULT_DELAY_MILLIS;
@@ -39,6 +36,7 @@ public final class SimpleCollection extends org.freedesktop.secret.simple.interf
     private static final Logger log = LoggerFactory.getLogger(SimpleCollection.class);
     private static final DBusConnection connection = getConnection();
     private static final Thread shutdownHook = setupShutdownHook();
+    private TransportEncryption.EncryptedSession transportEncryptedSession = null;
     private TransportEncryption transport = null;
     private Service service = null;
     private Session session = null;
@@ -85,7 +83,7 @@ public final class SimpleCollection extends org.freedesktop.secret.simple.interf
             init();
             if (password != null) {
                 try {
-                    encrypted = transport.encrypt(password);
+                    encrypted = transportEncryptedSession.encrypt(password);
                 } catch (NoSuchAlgorithmException |
                          NoSuchPaddingException |
                          InvalidAlgorithmParameterException |
@@ -190,18 +188,19 @@ public final class SimpleCollection extends org.freedesktop.secret.simple.interf
                 // algorithm (DH_IETF1024_SHA256_AES128_CBC_PKCS7) or raises an error, like
                 // "org.freedesktop.DBus.Error.ServiceUnknown <: org.freedesktop.dbus.exceptions.DBusException"
                 TransportEncryption transport = new TransportEncryption(connection);
-                transport.initialize();
-                boolean isSessionSupported = transport.openSession();
+                Optional<TransportEncryption.OpenedSession> opened = transport.initialize().flatMap(init -> init.openSession());
+                boolean isSessionSupported = opened.isPresent();
                 transport.close();
 
                 return isSessionSupported;
             } catch (DBusException | ExceptionInInitializerError e) {
                 log.warn("The secret service is not available. You may want to install the `gnome-keyring` package. Is the `gnome-keyring-daemon` running?", e);
                 return false;
-            } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
+            }
+            /*catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
                 log.error("The secret service could not be initialized as the service does not provide the expected transport encryption algorithm.", e);
                 return false;
-            }
+            }*/
         } else {
             log.error("No D-Bus connection: Cannot check if all needed services are available.");
             return false;
@@ -248,22 +247,18 @@ public final class SimpleCollection extends org.freedesktop.secret.simple.interf
 
     private void init() throws IOException {
         if (!isAvailable()) throw new IOException("The secret service is not available.");
-        try {
-            transport = new TransportEncryption(connection);
-            transport.initialize();
-            transport.openSession();
-            transport.generateSessionKey();
-            service = transport.getService();
-            session = service.getSession();
-            prompt = new Prompt(service);
-            withoutPrompt = new InternalUnsupportedGuiltRiddenInterface(service);
-        } catch (NoSuchAlgorithmException |
-                 InvalidAlgorithmParameterException |
-                 InvalidKeySpecException |
-                 InvalidKeyException |
-                 DBusException e) {
-            throw new IOException("Cloud not initiate transport encryption.", e);
-        }
+        TransportEncryption transport = new TransportEncryption(connection);
+        transportEncryptedSession = transport
+                .initialize()
+                .flatMap(i -> i.openSession())
+                .flatMap(o -> o.generateSessionKey())
+                .orElseThrow(
+                        () -> new IOException("Cloud not initiate transport encryption.")
+                );
+        service = transport.getService();
+        session = service.getSession();
+        prompt = new Prompt(service);
+        withoutPrompt = new InternalUnsupportedGuiltRiddenInterface(service);
     }
 
     private Map<ObjectPath, String> getLabels() {
@@ -443,7 +438,7 @@ public final class SimpleCollection extends org.freedesktop.secret.simple.interf
 
         DBusPath item = null;
         final Map<String, Variant> properties = Item.createProperties(label, attributes);
-        try (final Secret secret = transport.encrypt(password)) {
+        try (final Secret secret = transportEncryptedSession.encrypt(password)) {
             Pair<ObjectPath, ObjectPath> response = collection.createItem(properties, secret, false).get();
             if (response == null) return null;
             item = response.a;
@@ -511,7 +506,7 @@ public final class SimpleCollection extends org.freedesktop.secret.simple.interf
             item.setAttributes(attributes);
         }
 
-        if (password != null) try (Secret secret = transport.encrypt(password)) {
+        if (password != null) try (Secret secret = transportEncryptedSession.encrypt(password)) {
             item.setSecret(secret);
         } catch (NoSuchAlgorithmException |
                  NoSuchPaddingException |
@@ -587,7 +582,7 @@ public final class SimpleCollection extends org.freedesktop.secret.simple.interf
         char[] decrypted = null;
         ObjectPath sessionPath = session.getPath();
         try (final Secret secret = item.getSecret(sessionPath).orElseGet(() -> new Secret(sessionPath, null))) {
-            decrypted = transport.decrypt(secret);
+            decrypted = transportEncryptedSession.decrypt(secret);
         } catch (NoSuchPaddingException |
                  NoSuchAlgorithmException |
                  InvalidAlgorithmParameterException |
