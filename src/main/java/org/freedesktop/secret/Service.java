@@ -28,7 +28,7 @@ public class Service extends Messaging implements org.freedesktop.secret.interfa
     public Optional<Pair<Variant<byte[]>, ObjectPath>> openSession(String algorithm, Variant input) {
         return send("OpenSession", "sv", algorithm, input)
                 .filter(response -> !Static.Utils.isNullOrEmpty(response) && response.length == 2)
-                .flatMap(response -> Optional.of(new Pair<Variant<byte[]>, ObjectPath>((Variant<byte[]>) response[0], (ObjectPath) response[1])))
+                .flatMap(response -> Optional.of(new Pair<>((Variant<byte[]>) response[0], (ObjectPath) response[1])))
                 .map(pair -> {
                     log.debug("Got session: " + pair.b.getPath());
                     session = new Session(pair.b, this);
